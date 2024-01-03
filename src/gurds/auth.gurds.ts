@@ -9,4 +9,4 @@ export class AuthGuard implements CanActivate {
 
          return request.session.userId;
     }
-}
+} 
