@@ -17,7 +17,7 @@ import { Serialize } from '../interceptors/serialize.interceptor';
 import { UserDto } from './dtos/user-dto';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/currentUser.decorator';
-import { AuthGuard } from 'src/gurds/auth.gurds';
+import { AuthGuard } from '../gurds/auth.gurds';
 import { User } from './user.entity';
 
 @Controller('auth')
@@ -28,6 +28,7 @@ export class UsersController {
 
     @Post('/signup')
     async createUser(@Body() body: CreateUserDto, @Session() session: any){
+  
        const user = await this.authService.signup(body.email, body.password);
        session.userId = user.id
        return user;

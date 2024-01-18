@@ -2,16 +2,24 @@ import { Test } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from './users.service';
 import { User } from './user.entity';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('AuthService', ()=>{
     let service: AuthService;
     let fakeUsersService: Partial<UsersService>;
 
     beforeEach(async ()=>{
+        const users: User[] = [];
         fakeUsersService = {
-            find: () => Promise.resolve([]),
-            create: (email: string, password: string) => Promise.resolve({ id: 1, email, password} as User),
+            find: (email) => {
+                const filteredUsers = users.filter(user => user.email === email);
+                return Promise.resolve(filteredUsers);
+            },
+            create: (email: string, password: string) => {
+              const user = {id: Math.floor(Math.random()*999999),email, password } as User;
+              users.push(user);
+              return Promise.resolve(user);
+            },
         }
     
         const module = await Test.createTestingModule({
@@ -43,5 +51,22 @@ describe('AuthService', ()=>{
           BadRequestException,
         );
       });
+    it('throws if signin is call with an unused email', async () =>{
+        await expect(
+            service.signin('asdf@asdf.com', 'passdfkls'),
+        ).rejects.toThrow(NotFoundException)
+    })
+    it('throws if an invalid password is provided', async ()=>{
+        fakeUsersService.find = () => Promise.resolve([{id: 1, email: 'asdf@asdf.com', password: '1'} as User]);
+
+        await expect(service.signin('asdf@asdf.com', '2')).rejects.toThrow(BadRequestException)
+    })
+     it('resturns a user if correct password is provides', async ()=>{
+
+        await service.signup('asdf@asdf.com', 'mypassword');
+        const user = await service.signin('asdf@asdf.com', 'mypassword');
+        expect(user).toBeDefined();
+
+     })
 });
 
